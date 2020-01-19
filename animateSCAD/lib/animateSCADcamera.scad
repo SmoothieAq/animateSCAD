@@ -28,7 +28,8 @@ function _camera(cpoints,fps=2,t,frameNo) =
 		xps = cxpoints(cpoints),
 		xxps = cxxpoints(xps),
 		totTime = sum( [ for (p = xxps) p[_time_] ] ),
-		frameTime = nnv(t, frameNo != undef ? frameNo/fps : totTime*$t ),
+		sframeNo = $frameNo,
+		frameTime = sframeNo != undef ? sframeNo/fps : nnv(t, frameNo != undef ? frameNo/fps : totTime*$t ),
 		p = findP(xxps,frameTime),
 		deltaTime = frameTime-p[_startTime_],
 		delta = deltaTime/p[_time_],
@@ -36,13 +37,21 @@ function _camera(cpoints,fps=2,t,frameNo) =
 		drtx = cvz2vpdrtx([camPos,p[_viewAtAbsolute_],1])
 	)
 		echo("animateSCAD:",total_time=totTime,frames_per_second=fps,total_frames=totTime*fps)
-		echo(frameTime=frameTime,$t=$t,deltaTime=deltaTime,delta=delta,camPos=camPos,towards=p[_pname_])
-		concat(drtx,[xps,xxps]);
+		echo(frameTime=frameTime,$t=$t,frameNo=nnv(sframeNo,frameNo),deltaTime=deltaTime,delta=delta,camPos=camPos,towards=p[_pname_])
+		concat((sframeNo != undef ? [100,[0,0,0],[0,0,0],drtx[3]] : drtx),[xps,xxps],drtx);
 
 module _animation(showPath=false) {
 	assert($camera != undef,"You must set $camera with: $camera = camera(cpoints,fps);");
-	if (showPath) crLines( [ for (p=$camera[4]) p[0] ] );
-	children();
+	module model() {
+		if (showPath) crLines( [for (p = $camera[4]) p[0]] );
+		children();
+	}
+	if ($frameNo != undef)
+		translate([-$camera[8].x,-$camera[8].y,-$camera[8].z-$camera[6]+100])
+			rotate([-$camera[7].x,0,0]) rotate([0,-$camera[7].y,0]) rotate([0,0,-$camera[7].z])
+				model() children();
+	else
+		model() children();
 }
 
 function findP(ps,frameTime) = [ for (p = ps) if ( frameTime >= p[_startTime_] && frameTime <= p[_startTime_]+p[_time_]) p ][0];
