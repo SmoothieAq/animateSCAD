@@ -1,7 +1,5 @@
 
-use <animateSCAD.scad>
-use <animateSCADsplines.scad>
-use <animateSCADtransformations.scad>
+use <../animateSCAD/animateSCAD.scad>
 
 module myModel() {
 	color("blue") cube([10,14,18]);
@@ -33,4 +31,4 @@ $vpr = $camera[1];
 $vpt = $camera[2];
 
 
-viewFrom(showPath=true) myModel();
+animation(showPath=true) myModel();

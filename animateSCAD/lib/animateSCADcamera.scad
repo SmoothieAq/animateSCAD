@@ -15,27 +15,13 @@ _time_ = 8;
 _pname_ = 9;
 _splineM_ = 10;
 _startTime_ = 11;
-function cpoint(cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolute,viewAtTranslate,viewAtRotate,zoom,speed,time,pname) =
-	cpointx([],cameraAbsolute=cameraAbsolute,cameraTranslate=cameraTranslate,cameraRotate=cameraRotate,
-				viewAtAbsolute=viewAtAbsolute,viewAtTranslate=viewAtTranslate,viewAtRotate=viewAtRotate,
-				zoom=zoom,speed=speed,time=time,pname=pname);
-//	[cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolute,viewAtTranslate,viewAtRotate,zoom,speed,time,pname];
-
 function cpointx(cpoint,cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolute,viewAtTranslate,viewAtRotate,zoom,speed,time,pname,splineM,startTime) =
 	[nnv(cameraAbsolute,cpoint[_cameraAbsolute_]),nnv(cameraTranslate,cpoint[_cameraTranslate_]),nnv(cameraRotate,cpoint[_cameraRotate_]),
 	 nnv(viewAtAbsolute,cpoint[_viewAtAbsolute_]),nnv(viewAtTranslate,cpoint[_viewAtTranslate_]),nnv(viewAtRotate,cpoint[_viewAtRotate_]),
 	 nnv(zoom,cpoint[_zoom_]),nnv(speed,cpoint[_speed_]),nnv(time,cpoint[_time_]),nnv(cpoint[_pname_],pname),
 	 nnv(splineM,cpoint[_splineM_]),nnv(startTime,cpoint[_startTime_])];
 
-/*
-$vpd = $camera[0];
-$vpr = $camera[1];
-$vpt = $camera[2];
-
-view($camera) myModel();
-
- */
-function camera(cpoints,fps=2,t,frameNo) =
+function _camera(cpoints,fps=2,t,frameNo) =
 	assert(is_list(cpoints) && len(cpoints) > 1, "The cpoints argument should be a list of cpoint()")
 	assert(cpoints[0][_cameraAbsolute_] != undef || cpoints[0][_viewAtAbsolute_] != undef, "The first cpoint should have an absolute camera position or an absolute viewAt position")
 	let (
@@ -53,7 +39,7 @@ function camera(cpoints,fps=2,t,frameNo) =
 		echo(frameTime=frameTime,$t=$t,deltaTime=deltaTime,delta=delta,camPos=camPos,towards=p[_pname_])
 		concat(drtx,[xps,xxps]);
 
-module viewFrom(showPath=false) {
+module _animation(showPath=false) {
 	assert($camera != undef,"You must set $camera with: $camera = camera(cpoints,fps);");
 	if (showPath) crLines( [ for (p=$camera[4]) p[0] ] );
 	children();
