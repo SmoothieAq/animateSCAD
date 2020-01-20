@@ -6,6 +6,6 @@ function cpoint(cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolute,viewA
 				viewAtAbsolute=viewAtAbsolute,viewAtTranslate=viewAtTranslate,viewAtRotate=viewAtRotate,
 				zoom=zoom,speed=speed,time=time,pname=pname);
 
-function camera(cpoints,fps=2,t,frameNo) = _camera(cpoints,fps,t,frameNo);
+function camera(cpoints,fps,t,frameNo) = _camera(cpoints,fps,t,frameNo);
 
 module animation(showPath=false) { _animation(showPath) children(); }

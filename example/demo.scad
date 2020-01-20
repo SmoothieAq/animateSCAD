@@ -17,7 +17,8 @@ $vpt = $camera[2];
 
 view($camera) myModel();
 */
-$frameNo=undef;
+$fps = 30;
+$frameNo = undef;
 
 $camera = camera(cpoints=[
 	cpoint(cameraAbsolute=[110,110,210]),
@@ -25,7 +26,7 @@ $camera = camera(cpoints=[
 	cpoint(cameraAbsolute=[0,30,-10]),
 	cpoint(cameraTranslate=[70,35,140]),
 	cpoint(cameraAbsolute=[45,65,95])
-],fps=60);
+]);
 
 $vpd = $camera[0];
 $vpr = $camera[1];

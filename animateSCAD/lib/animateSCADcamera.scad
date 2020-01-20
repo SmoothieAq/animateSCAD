@@ -21,27 +21,28 @@ function cpointx(cpoint,cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolu
 	 nnv(zoom,cpoint[_zoom_]),nnv(speed,cpoint[_speed_]),nnv(time,cpoint[_time_]),nnv(cpoint[_pname_],pname),
 	 nnv(splineM,cpoint[_splineM_]),nnv(startTime,cpoint[_startTime_])];
 
-function _camera(cpoints,fps=2,t,frameNo) =
+function _camera(cpoints,fps,t,frameNo) =
 	assert(is_list(cpoints) && len(cpoints) > 1, "The cpoints argument should be a list of cpoint()")
 	assert(cpoints[0][_cameraAbsolute_] != undef || cpoints[0][_viewAtAbsolute_] != undef, "The first cpoint should have an absolute camera position or an absolute viewAt position")
 	let (
+		sfps = nnv(fps,$fps),
 		xps = cxpoints(cpoints),
 		xxps = cxxpoints(xps),
 		totTime = sum( [ for (p = xxps) p[_time_] ] ),
 		sframeNo = $frameNo,
-		frameTime = sframeNo != undef ? sframeNo/fps : nnv(t, frameNo != undef ? frameNo/fps : totTime*$t ),
+		frameTime = sframeNo != undef ? sframeNo/sfps : nnv(t, frameNo != undef ? frameNo/sfps : totTime*$t ),
 		p = findP(xxps,frameTime),
 		deltaTime = frameTime-p[_startTime_],
 		delta = deltaTime/p[_time_],
 		camPos = crSplineT(p[_splineM_],delta),
 		drtx = cvz2vpdrtx([camPos,p[_viewAtAbsolute_],1])
 	)
-		echo("animateSCAD:",total_time=totTime,frames_per_second=fps,total_frames=totTime*fps)
+		echo("animateSCAD:",total_time=totTime,frames_per_second=sfps,total_frames=totTime*sfps)
 		echo(frameTime=frameTime,$t=$t,frameNo=nnv(sframeNo,frameNo),deltaTime=deltaTime,delta=delta,camPos=camPos,towards=p[_pname_])
 		concat((sframeNo != undef ? [100,[0,0,0],[0,0,0],drtx[3]] : drtx),[xps,xxps],drtx);
 
 module _animation(showPath=false) {
-	assert($camera != undef,"You must set $camera with: $camera = camera(cpoints,fps);");
+	assert($camera != undef,"You must set $camera with: $camera = camera(cpoints);");
 	module model() {
 		if (showPath) crLines( [for (p = $camera[4]) p[0]] );
 		children();
