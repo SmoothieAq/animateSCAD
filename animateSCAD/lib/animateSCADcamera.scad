@@ -15,11 +15,12 @@ _time_ = 8;
 _pname_ = 9;
 _splineM_ = 10;
 _startTime_ = 11;
-function cpointx(cpoint,cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolute,viewAtTranslate,viewAtRotate,zoom,speed,time,pname,splineM,startTime) =
+_viewAtSplineM_ = 12;
+function cpointx(cpoint,cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolute,viewAtTranslate,viewAtRotate,zoom,speed,time,pname,splineM,startTime,viewAtSplineM) =
 	[nnv(cameraAbsolute,cpoint[_cameraAbsolute_]),nnv(cameraTranslate,cpoint[_cameraTranslate_]),nnv(cameraRotate,cpoint[_cameraRotate_]),
 	 nnv(viewAtAbsolute,cpoint[_viewAtAbsolute_]),nnv(viewAtTranslate,cpoint[_viewAtTranslate_]),nnv(viewAtRotate,cpoint[_viewAtRotate_]),
 	 nnv(zoom,cpoint[_zoom_]),nnv(speed,cpoint[_speed_]),nnv(time,cpoint[_time_]),nnv(cpoint[_pname_],pname),
-	 nnv(splineM,cpoint[_splineM_]),nnv(startTime,cpoint[_startTime_])];
+	 nnv(splineM,cpoint[_splineM_]),nnv(startTime,cpoint[_startTime_]),nnv(viewAtSplineM,cpoint[_viewAtSplineM_])];
 
 function _camera(cpoints,fps,t,frameNo) =
 	assert(is_list(cpoints) && len(cpoints) > 1, "The cpoints argument should be a list of cpoint()")
@@ -28,23 +29,39 @@ function _camera(cpoints,fps,t,frameNo) =
 		sfps = nnv(fps,$fps),
 		xps = cxpoints(cpoints),
 		xxps = cxxpoints(xps),
-		totTime = sum( [ for (p = xxps) p[_time_] ] ),
+		totTime = totTime(xxps),//sum( [ for (p = xxps) p[_time_] ] ),
 		sframeNo = $frameNo,
-		frameTime = sframeNo != undef ? sframeNo/sfps : nnv(t, frameNo != undef ? frameNo/sfps : totTime*$t ),
+		frameTime0 = sframeNo != undef ? sframeNo/sfps : nnv(t, frameNo != undef ? frameNo/sfps : totTime*$t ),
+		frameTime = frameTime0 < 0.001 ? 0.001 : frameTime0,
+		cvPos = findPos(xxps,frameTime),
+		drtx = cvz2vpdrtx([cvPos[0],cvPos[1],1])
+	)
+		echo("animateSCAD:",total_time=totTime,frames_per_second=sfps,total_frames=totTime*sfps)
+		echo(frameTime=frameTime,$t=$t,frameNo=nnv(sframeNo,frameNo),deltaTime=cvPos[2],delta=cvPos[3],camPos=cvPos[0],viewAtPos=cvPos[1],towards=cvPos[4])
+		concat((sframeNo != undef ? [100,[0,0,0],[0,0,0],drtx[3]] : drtx),[xps,xxps],drtx);
+
+function findPos(xxps,frameTime) = let (
 		p = findP(xxps,frameTime),
 		deltaTime = frameTime-p[_startTime_],
 		delta = deltaTime/p[_time_],
 		camPos = crSplineT(p[_splineM_],delta),
-		drtx = cvz2vpdrtx([camPos,p[_viewAtAbsolute_],1])
-	)
-		echo("animateSCAD:",total_time=totTime,frames_per_second=sfps,total_frames=totTime*sfps)
-		echo(frameTime=frameTime,$t=$t,frameNo=nnv(sframeNo,frameNo),deltaTime=deltaTime,delta=delta,camPos=camPos,towards=p[_pname_])
-		concat((sframeNo != undef ? [100,[0,0,0],[0,0,0],drtx[3]] : drtx),[xps,xxps],drtx);
+		viewAtPos = crSplineT(p[_viewAtSplineM_],delta),
+		pname = p[_pname_]
+	) [camPos,viewAtPos,deltaTime,delta,pname];
 
-module _animation(showPath=false) {
+module _animation(showPath=0) {
 	assert($camera != undef,"You must set $camera with: $camera = camera(cpoints);");
 	module model() {
-		if (showPath) crLines( [for (p = $camera[4]) p[0]] );
+		module viewLine(t) { cvPos = findPos($camera[5],t); line(cvPos[0],cvPos[1]); }
+		if (showPath > 0) {
+			crLines( [for (p = $camera[4]) p[0]] );
+			totTime = totTime($camera[5]);
+			if (showPath > 1) {
+				for (t = [0.001:totTime]) color("blue", 0.05) viewLine(t);
+				for (t = [0.001:0.2:totTime]) color("lightblue", 0.05) viewLine(t);
+			}
+			*for (v =[ for( t = 0, cvPos1 = [0,0,0], cvPos2 = findPos($camera[5],t)[0], d1=0,d2= findPos($camera[5],t)[3]; t < totTime; t = t+0.2, cvPos1 = cvPos2, cvPos2 = findPos($camera[5],t)[0], d1=d2,d2= findPos($camera[5],t)[3]) [t,cvPos1,cvPos2,norm(cvPos1-cvPos2),d2-d1]]) echo(v);
+		}
 		children();
 	}
 	if ($frameNo != undef)
@@ -57,6 +74,7 @@ module _animation(showPath=false) {
 
 function findP(ps,frameTime) = [ for (p = ps) if ( frameTime >= p[_startTime_] && frameTime <= p[_startTime_]+p[_time_]) p ][0];
 
+function totTime(xccpoints) = sum( [ for (p = xccpoints) p[_time_] ] );
 
 function cxpoints(cpoints) = [ for (
 		i = 0,
@@ -78,7 +96,8 @@ function move(curPos,cpoint,absidx,transidx) =
 			curPos;
 
 function cxxpoints(cxpoints) = let (
-	ms = crSplineMs([ for (p = cxpoints) p[_cameraAbsolute_] ])
+	ms = crSplineMs([ for (p = cxpoints) p[_cameraAbsolute_] ]),
+	vms = crSplineMs([ for (p = cxpoints) p[_viewAtAbsolute_] ])
 ) [ for (
 		i = 0,
 		p = undef,
@@ -90,10 +109,12 @@ function cxxpoints(cxpoints) = let (
 		i = i+1,
 		p = cxpoints[i],
 		m = ms[i-1],
+		vm = vms[i-1],
 		time = time(p,m),
 		fromTime = toTime,
-		toTime = fromTime+time
-	) if (i > 0) echo(p[_pname_],startTime=fromTime,time=time) cpointx(p,splineM=m,time=time,startTime=fromTime) ];
+		toTime = fromTime+time,
+		dummy = (($frameNo == undef || $frameNo < 1) && i > 0 && i < len(cxpoints) ) ? echo(p[_pname_],startTime=fromTime,time=time) 1 : 0
+) if (i > 0) cpointx(p,splineM=m,viewAtSplineM=vm,time=time,startTime=fromTime) ];
 
 function time(p,m) = p[_time_] != undef ? p[_time_] : crLeng(m) / p[_speed_];
 
