@@ -3,7 +3,7 @@
 Model(or model), World and View spaces: http://www.codinglabs.net/article_world_view_projection_matrix.aspx
 Transformation to View space: https://www.3dgep.com/understanding-the-view-matrix/
 
-We use a "Look At Camera" with Eye position, up vector and target point (and zoom)
+We use a "Look At Camera" with Eye position, up vector and target point (and zoom); we hold that in a cvz vector, asuming an up vector of [0,0,1]
 */
 
 
@@ -27,7 +27,7 @@ function cvz2vpdrtx(cvz) = let (
 	[ vpd, vpr, vpt, vpx ];
 
 // from OpenSCAD vpd, vpr, vpt to [campPos,viewAtPos,zoom]
-function vpdr2cvz(vpd, vpr, vpt) = let (
+function vpdrt2cvz(vpd, vpr, vpt) = let (
 		camDir = EAxyz2CamDir(vpr),
 		camPos = vpt-camDir*vpd,
 		viewAtPos = vpt,
@@ -61,3 +61,11 @@ function camRot(dir,top) =
 // adapted from https://stackoverflow.com/questions/1568568/how-to-convert-euler-angles-to-directional-vector by Adisak (third column of the ORDER_XYZ)
 function EAxyz2CamDir(vpr) = [-sin(vpr.x)*sin(vpr.z),sin(vpr.x)*cos(vpr.z),-cos(vpr.x)];
 
+// We use the OpenSCAD values vpd, vpr, vpt to move the world instead of moving the camera;
+// we asume the camera is fixed at vpd=100, vpr=[0,0,0] and vpt=[0,0,0]
+module vpdrt2transform(vpd, vpr, vpt) {
+	translate([0, 0, -vpd + 100])
+		rotate([-vpr.x, 0, 0]) rotate([0, -vpr.y, 0]) rotate([0, 0, -vpr.z])
+			translate([-vpt.x, -vpt.y, -vpt.z])
+				children();
+}
