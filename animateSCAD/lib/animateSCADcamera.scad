@@ -65,8 +65,9 @@ module _animation(showPath=0) {
 		children();
 	}
 	if ($frameNo != undef)
-		translate([-$camera[8].x,-$camera[8].y,-$camera[8].z-$camera[6]+100])
+		translate([0,0,-$camera[6]+100])
 			rotate([-$camera[7].x,0,0]) rotate([0,-$camera[7].y,0]) rotate([0,0,-$camera[7].z])
+			translate([-$camera[8].x,-$camera[8].y,-$camera[8].z])
 				model() children();
 	else
 		model() children();

@@ -16,12 +16,12 @@ $camera = camera(cpoints=[
 	cpoint(cameraAbsolute=[0,-40,0],viewAtAbsolute=[0,-20,0]),
 	cpoint(cameraTranslate=[70,-20,140]),
 	cpoint(cameraAbsolute=[-45,65,95])
-],t=10);
+]);
 
 $vpd = $camera[0];
 $vpr = $camera[1];
 $vpt = $camera[2];
 
-animation(showPath=2) myModel();
+animation(showPath=0) myModel();
 
 //
