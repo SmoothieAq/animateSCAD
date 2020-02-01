@@ -1,1 +1,0 @@
-openscad -o frame299.png -D '$frameNo=299' --colorscheme Nature --imgsize 1280,720 --camera 0,0,0,0,0,0,100 ..\demo.scad

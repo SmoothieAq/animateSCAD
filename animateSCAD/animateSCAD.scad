@@ -1,11 +1,13 @@
 
 use <lib/animateSCADcamera.scad>
+use <lib/animateSCADpath.scad>
 
-function cpoint(cameraAbsolute,cameraTranslate,cameraRotate,viewAtAbsolute,viewAtTranslate,viewAtRotate,zoom,speed,time,accel,pname) =
-	cpointx([],cameraAbsolute=cameraAbsolute,cameraTranslate=cameraTranslate,cameraRotate=cameraRotate,
-				viewAtAbsolute=viewAtAbsolute,viewAtTranslate=viewAtTranslate,viewAtRotate=viewAtRotate,
-				zoom=zoom,speed=speed,time=time,accel=accel,pname=pname);
+function cpoint(pname,pos,move,cameraAndView,standStill,speed,time,accel) =
+	cpointx([],pos=pos,move=move,cameraAndView=cameraAndView,standStill=standStill,speed=speed,time=time,accel=accel,pname=pname);
 
-function camera(cpoints,fps,t,frameNo) = _camera(cpoints,fps,t,frameNo);
+function vpoint(cRel,pos,move,cameraAndView,straightAhead,standStill,zoom,accel) =
+	cpointx([],cRel=cRel,pos=pos,move=move,cameraAndView=cameraAndView,straightAhead=straightAhead,standStill=standStill,zoom=zoom,accel=accel);
 
-module animation(showPath=0) { _animation(showPath) children(); }
+function camera(cpoints,vpoints=[],fps,t,frameNo) = _camera(cpoints,vpoints,fps=fps,t=t,frameNo=frameNo);
+
+module animation(showPath=0) { _animation() showWithPath(showPath) children(); }
