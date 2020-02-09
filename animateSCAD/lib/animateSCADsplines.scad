@@ -2,20 +2,19 @@
 use <animateSCADutil.scad>
 
 // Catmull-Rom Spline after http://www.cs.cmu.edu/~jkh/462_s07/08_curves_splines_part2.pdf
-s = 0.5;
-crBasis = [
+function crBasis(s=0.5) = [
 	[ -s, 2-s, s-2, s ],
 	[ 2*s, s-3, 3-2*s, -s ],
 	[ -s, 0, s, 0 ],
 	[ 0, 1, 0, 0]
 ];
-function crSplineM(p0,p1,p2,p3) = crBasis*[p0,p1,p2,p3];
-function crSplineMs(ps) = [ for (i = [0:len(ps)-2])
+function crSplineM(p0,p1,p2,p3,s=0.3) = crBasis(s)*[p0,p1,p2,p3];
+function crSplineMs(ps,s=0.3) = [ for (i = [0:len(ps)-2])
 	let (
 		p0 = i == 0 ? ps[i] : ps[i-1],
 		p3 = i == len(ps)-2 ? ps[i+1] : ps[i+2]
 	)
-		crSplineM(p0,ps[i],ps[i+1],p3)
+		crSplineM(p0,ps[i],ps[i+1],p3,s=s)
 ];
 
 function crSplineU(m,u) = [pow(u,3),pow(u,2),u,1]*m;
@@ -52,16 +51,18 @@ function sFindSegment(ss,tLeng,n,m) =
 		[ss[m-1][0],ss[m-1][2],ss[m][0],ss[m][1]];
 
 function crPoints(m,n) = [ for (i = [0:n]) crSplineU(m,i/n) ];
-module crLine(crPoints) color("green",0.3) for (i = [0:len(crPoints)-2]) { *echo(i); line(crPoints[i],crPoints[i+1]); }
+module crLine(crPoints, color="green") color(color,0.3) for (i = [0:len(crPoints)-2]) { *echo(i); line(crPoints[i],crPoints[i+1]); }
 
 function crLeng(m,nsegments=30) = pathleng([ for (i = [0:nsegments]) crSplineU(m,i/nsegments) ]);
 function pathleng(points,i=0) = sum( segmentLengths(points) );// i+1 >= len(points) ? 0 : norm(points[i]-points[i+1])+pathleng(points,i+1);
 
 function segmentLengths(points) = [ for ( i = 0, p2 = points[i]; i < len(points); i = i+1, p1 = p2, p2 = points[i]) if (i > 0) norm(p2-p1) ];
 
-module crLines(ps,nsegments=20) {
-	color("red") for (p = ps) translate(p) cube(1,center=true);
-	for (m = crSplineMs(ps)) crLine(crPoints(m,nsegments));
+module crLines(ps,nsegments=20, color="green", dotColor="red") {
+	color(dotColor) for (p = ps) translate(p) cube(1,center=true);
+	ms = crSplineMs(ps);
+	for (i = [1:len(ms)]) if (norm(ps[i]-ps[i-1]) > 0.05) crLine(crPoints(ms[i-1],nsegments),color=color);
 }
+
 
 

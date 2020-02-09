@@ -53,12 +53,12 @@ function cpointx(cpoint,pname,pos,move,cameraAndView,standStill,speed,time,accel
 // $camera[8] 	vpt (the real on)
 function _camera(cpoints,vpoints,fps,t,frameNo) =
 	assert(is_list(cpoints) && len(cpoints) > 1, "The cpoints argument should be a list of cpoint()")
-	assert(cpoints[0][_pos_] != undef || cpoints[0][_viewAtAbsolute_] != undef, "The first cpoint should have an absolute camera position or an absolute viewAt position")
+//	assert(cpoints[0][_pos_] != undef || cpoints[0][_viewAtAbsolute_] != undef, "The first cpoint should have an absolute camera position or an absolute viewAt position")
 	let (
 		sfps = nnv(fps,$fps),
 		cxps = cxpoints(cpoints),
 		cxxps = cxxpoints(cxps),
-		vxps = vxpoints(fullVpoints(vpoints,cxxps),cxxps),
+		vxps = vxpoints(fullVpoints(vpoints,cxps),cxps,cxxps),
 		vxxps = vxxpoints(vxps,cxxps),
 		totTime = totTime(cxxps),
 		sframeNo = $frameNo,
@@ -72,7 +72,7 @@ function _camera(cpoints,vpoints,fps,t,frameNo) =
 		concat((sframeNo != undef ? [100,[0,0,0],[0,0,0],drtx[3]] : drtx),[cxps,cxxps],drtx,[vxps,vxxps]);
 
 function _fullVpoints(vr,cn,o) = (vr[0] == cn && abs(vr[1]-o) < 0.02) ? [] : [cpointx([],cRel=[cn,o])];
-function fullVpoints(vps,cxxps) = concat(_fullVpoints(vps[0][_cRel_],cxxps[0][_pname_],-cxxps[0][_time_]),vps,_fullVpoints(vps[len(vps)-1][_cRel_],cxxps[len(cxxps)-1][_pname_],0));
+function fullVpoints(vps,cxps) = concat(_fullVpoints(vps[0][_cRel_],cxps[0][_pname_],0),vps,_fullVpoints(vps[len(vps)-1][_cRel_],cxps[len(cxps)-1][_pname_],0));
 
 // Show the children (=the model) for a specific frame that was specified in $camera from the previous camera() function call
 // If $frameNo != undef we asume a fixed camera and move the world - this is usually only for scripted call to openscad
@@ -80,28 +80,34 @@ function fullVpoints(vps,cxxps) = concat(_fullVpoints(vps[0][_cRel_],cxxps[0][_p
 module _animation() {
 	assert($camera != undef,"You must set $camera with: $camera = camera(cpoints);");
 	if ($frameNo != undef)
-		vpdrt2transform($camera[6], $camera[7], $camera[8]) children();
+		vpdrt2transform($camera[6], $camera[7], $camera[8]) multmatrix($camera[3]) children();
 	else
-		children();
+		multmatrix($camera[3]) children();
 }
 
 
 // Find the the camera pos, viewAt pos and zoom for a given frameTime
 function findCvz(cxxps,vxxps,frameTime) = let (
-		cpos = findPos(cxxps,frameTime),
-		vpos = findPos(vxxps,frameTime),
+		cpos = findPos(cxxps,undef,frameTime),
+		vpos = findPos(vxxps,cxxps,frameTime),
 		zoom = 1
 	) [cpos[0],vpos[0],zoom,cpos[1],cpos[2],cpos[3]];
 
 // Find the the pos for a given frameTime
-function findPos(xxps,frameTime) = let (
+function findPos(xxps,cxxps,frameTime) = let (
 	p = findP(xxps,frameTime), // the path where the frame are in
-	deltaTime = frameTime-p[_startTime_], // time from beginning of the path
-	deltaLeng = lt(deltaTime,p[_startSpeed_],p[_speed_],p[_accel_]),
-	delta = p[_leng_] < 0.01 || deltaLeng < 0.01 ? 0.01 : deltaLeng / p[_leng_],
-	pos = crSplineT(p[_splineM_],delta),
-	pname = p[_pname_]
-) /*echo(deltaTime=deltaTime,deltaLeng=deltaLeng,delta=delta,frameTime=frameTime,pos=pos,p[_pname_])*/ [pos,deltaTime,delta,pname];
+	pname = p[_pname_],
+	deltaTime = frameTime-p[_startTime_] // time from beginning of the path
+) p[_straightAhead_] ?
+	let (
+		straightAhead = p[_straightAhead_],
+		pos = vStraightAheadPos(frameTime,p[_straightAhead_],cxxps)
+	) /*echo(pname,frameTime=frameTime,deltaTime=deltaTime,straightAhead=straightAhead,pos=pos)*/ [pos,deltaTime,undef,pname] :
+	let (
+		deltaLeng = lt(deltaTime,p[_startSpeed_],p[_speed_],p[_accel_]),
+		delta = p[_leng_] < 0.01 || deltaLeng < 0.01 ? 0.01 :  p[_leng_]-deltaLeng < 0.01 ? 1 : deltaLeng / p[_leng_],
+		pos = p[_leng_] < 0.01 ? p[_pos_] : crSplineT(p[_splineM_],delta)
+	) /*echo(pname,frameTime=frameTime,deltaTime=deltaTime,deltaLeng=deltaLeng,delta=delta,pos=pos)*/ [pos,deltaTime,delta,pname];
 
 
 /// Find the path containing a given frame
@@ -142,7 +148,7 @@ This is the second transformation from the cxpoints vector to the cxxpoints vect
 We make sure the following are now set: splineM, startSpeed, speed, startTime and time
  */
 function cxxpoints(cxpoints) = let (
-	ms = crSplineMs([ for (p = cxpoints) p[_pos_] ])
+	ms = crSplineMs([ for (p = cxpoints) p[_pos_] ],s=0.4)
 ) [ for (
 		i = 0,
 		p = undef,
@@ -164,7 +170,7 @@ function cxxpoints(cxpoints) = let (
 		time = stta[1],
 		fromTime = toTime,
 		toTime = fromTime+time,
-		dummy = (($frameNo == undef || $frameNo < 1) && i > 0 && i < len(cxpoints) ) ? echo(p[_pname_],startTime=fromTime,time=time,leng=leng) 1 : 0
+		dummy = (($frameNo == undef || $frameNo < 1) && i > 0 && i < len(cxpoints) ) ? echo(p[_pname_],startTime=fromTime,time=time,leng=leng,cpos=p[_pos_]) 1 : 0
 ) if (i > 0) cpointx(p,splineM=m,time=time,startTime=fromTime,leng=leng,startSpeed=startSpeed,speed=stta[0],accel=stta[2]) ];
 
 function findcxx(pname,cxxs) = let ( i = search([pname],cxxs) ) cxxs[i[0]];
@@ -174,54 +180,64 @@ This is the fist transformation from the vpoints vector to the vxpoints vector.
 We make sure each point has absolute endTime positions. cRel is changed to be the referenced cxxp.
 We cary forward zoom and accel when they are not set.
  */
-function vxpoints(vpoints,cxxpoints) = let (
+function vxpoints(vpoints,cxpoints,cxxpoints) = let (
 	ps = [ for (p = vpoints)
 		let (
-			cp = findcxx(p[_cRel_][0],cxxpoints)
+			cp0 = findcxx(p[_cRel_][0],cxxpoints),
+			cp = cp0 == undef ? findcxx(p[_cRel_][0],cxpoints) : cp0
 		) cpointx(p,cRel=cp,endTime=cp[_startTime_]+cp[_time_]+p[_cRel_][1],pname=str("V",cp[_pname_],"/",p[_cRel_][1]))
 	]
 ) [ for (
 		i = 0,
 		p = ps[i],
-		pos = vmove([0,0,0],p,cxxpoints),
+		startTime = 0,
+		endTime = 0,
+		time = 0,
+		pos = vmove([0,0,0],p,cxpoints),
 		zoom = nnv(p[_zoom_],50),
-		accel = nnv(p[_accel_],100);
+		accel = nnv(p[_accel_],100),
+		prevStraightAhead = p[_straightAhead_],
+		straightAhead = false;
 	i < len(vpoints);
 		i = i+1,
 		p = ps[i],
-		pos = vmove(pos,p,cxxpoints),
+		startTime = endTime,
+		endTime = p[_endTime_],
+		time = endTime - startTime,
+		pos = vmove(pos,p,cxxpoints,endTime),
 		zoom = nnv(p[_zoom_],zoom),
-		accel = nnv(p[_accel_],accel)
-) cpointx(p,pos=pos,zoom=zoom,accel=accel) ];
+		accel = nnv(p[_accel_],accel),
+		straightAhead = prevStraightAhead && p[_straightAhead_] ? p[_straightAhead_] : false,
+		prevStraightAhead = p[_straightAhead_]
+) /*echo(i,startTime=startTime,time=time,endTime=endTime,prevStraightAhead,straightAhead,p[_straightAhead_])*/ cpointx(p,startTime=startTime,time=time,pos=pos,zoom=zoom,accel=accel,straightAhead=straightAhead) ];
 
-function vmove(curPos,p,cxxpoints) =
+function vmove(curPos,p,cxxpoints,startTime) =
 	p[_pos_] != undef ? p[_pos_] :
 		p[_move_] != undef ? curPos + p[_move_] :
 			p[_cameraAndView_] != undef ? let ( cv = p[_cRel_][_cameraAndView_] ) vpdrt2cvz(cv[0], cv[1], cv[2])[1] :
-				p[_straightAhead_] != undef ? vStraightAheadPos(p,cxxpoints) :
+				p[_straightAhead_] != undef ? vStraightAheadPos(startTime,p[_straightAhead_],cxxpoints) :
 					curPos;
 
-function vStraightAheadPos(p,cxxpoints) = let (
-	vt0 = p[_startTime_],
-	t0 = vt0 > 0.1 ? vt0-0.1 : 0.01,
-	t1 = vt0 > 0.1 ? vt0 : vt0 + 0.01,
-	cp1 = findPos(cxxpoints,t1),
-	dir = unit(findPos(cxxpoints,t0)-cp1)
-) cp1 + dir * p[_straightAhead_];
+function vStraightAheadPos(t,dist,cxxpoints) = let (
+	t0 = t > 0.1 ? t-0.1 : 0.01,
+	t1 = t > 0.1 ? t : 0.11,
+	cp1 = findPos(cxxpoints,undef,t1)[0],
+	cp0 = findPos(cxxpoints,undef,t0)[0],
+	dir = unit(cp1-cp0),
+	pos = cp1 + dir * dist
+) /*echo("vStraightAheadPos>>",t=t,t0=t0,cp0=cp0,t1=t1,cp1=cp1,dist=dist,pos=pos)*/ pos;
 
 /*
 This is the second transformation from the vxpoints vector to the vxxpoints vector.
 We make sure the following are now set: startTime, time, splineM, startSpeed and speed
  */
 function vxxpoints(vxpoints,cxxpoints) = let (
-	ms = crSplineMs([ for (p = vxpoints) p[_pos_] ])
+	ms = vcrSplineMs(vxpoints,s=0.2)
 ) [ for (
 		i = 0,
 		p = undef,
 		m = undef,
 		time = undef,
-		startTime = 0,
-		endTime = 0,
 		endSpeed = 0,
 		prevPos = vxpoints[0][_pos_];
 	i < len(vxpoints);
@@ -230,12 +246,18 @@ function vxxpoints(vxpoints,cxxpoints) = let (
 		m = ms[i-1],
 		leng = prevPos == p[_pos_] ? 0 : crLeng(m),
 		prevPos = p[_pos_],
-		startTime = endTime,
-		endTime = p[_endTime_],
-		time = endTime - startTime,
 		startSpeed = endSpeed,
-		stta = i >= len(vxpoints) ? [] : leng > 0 ? stta(startSpeed,leng,p[_accel_],time,undef) : [0,time,0],
-		endSpeed = stta[0],
-		dummy = (($frameNo == undef || $frameNo < 1) && i > 0 && i < len(vxpoints) ) ? echo(p[_pname_],startTime=startTime,time=time,leng=leng) 1 : 0
-) if (i > 0) cpointx(p,splineM=m,startTime=startTime,time=time,leng=leng,startSpeed=startSpeed,speed=stta[0],accel=stta[2]) ];
+		stta = i >= len(vxpoints) ? [] : leng > 0 ? stta(startSpeed,leng,p[_accel_],p[_time_],undef) : [0,time,0],
+		endSpeed = p[_straightAhead_] ? 50 : stta[0],
+		dummy = (($frameNo == undef || $frameNo < 1) && i > 0 && i < len(vxpoints) ) ? echo(p[_pname_],startTime=p[_startTime_],time=p[_time_],leng=leng,vpos=p[_pos_]) 1 : 0
+) if (i > 0) cpointx(p,splineM=m,leng=leng,startSpeed=startSpeed,speed=stta[0],accel=stta[2]) ];
 
+function vcrSplineMs(ps,s=0.3) = [ for (i = [0:len(ps)-2])
+	let (
+		p0 = (i == 0 || ps[i][_straightAhead_] || ps[i+1][_straightAhead_]) ? ps[i][_pos_] : ps[i-1][_pos_],
+		p1 = ps[i][_pos_],
+		p2 = ps[i+1][_pos_],
+		p3 = (i == len(ps)-2 || ps[i+2][_straightAhead_] || ps[i+1][_straightAhead_]) ? ps[i+1][_pos_] : ps[i+2][_pos_]
+	)
+	/*echo(p0,p1,p2,p3,ps[i+2][_straightAhead_],ps[i+1][_straightAhead_])*/ crSplineM(p0,p1,p2,p3,s=s)
+];
