@@ -51,7 +51,7 @@ at s speed, and finally a decceleration segment down to full stop.
 
 For the full path travel, the following is then true:
 	l = ta * s0 + ta * (s - s0) / 2 + (tt - ta - tc) * s + tc * s / 2
-where ta is the time the acceleration segment ends, and
+where ta is the time the acceleration segment ends and tc is the time of the decceleration to full stop, so
 	ta * a = abs(s - s0)
 	tc * a = s
 

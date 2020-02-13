@@ -20,6 +20,8 @@ $BaseFile = [System.IO.Path]::GetFileNameWithoutExtension($File)
 $LogFile = "$BaseFile.log"
 $MovieFile = "$BaseFile.mp4"
 
+$sw = [Diagnostics.Stopwatch]::StartNew()
+
 if (Test-Path $LogFile)
 {
     ## Remove any previous log file
@@ -177,5 +179,7 @@ if ($Ec -eq 0)
 {
     ## remove all the frames and leave just the log and the .mp4 movie
     rm *.png
-    Write-Output "**** Animation is ready in $MovieFile"
+    $sw.Stop()
+    $Took = $sw.Elapsed
+    Write-Output "**** Animation is ready in $MovieFile, it took $Took"
 }

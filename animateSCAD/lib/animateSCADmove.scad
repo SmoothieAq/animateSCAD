@@ -25,11 +25,32 @@ module mmove(p,mxps,mxxps) {
 }
 
 module mcolor(p) {
-	children();
+	function mid(a,b,i) = nnv(a[i],1) + (nnv(b[i],1)-nnv(a[i],1))*p[2];
+	c1 = p[4][_color_];;
+	if (!c1) {
+		children();
+	} else {
+		c0 = nnv(p[4][_prevColor_],c1);
+		c = [ for (i=[0:3]) mid(c0,c1,i) ];
+		echo(c0=c0,c1=c1,c=c);
+		color(c) children();
+	}
 }
 
 module mrotate(p) {
-	children();
+	function mid(a,b,i) = nnv(a[i],0) + (nnv(b[i],0)-nnv(a[i],0))*p[2];
+	r1 = p[4][_rotate_];
+	if (!r1) {
+		children();
+	} else {
+		r0 = nnv(p[4][_prevRotate_],r1);
+		r = [ for (i=[0:5]) mid(r0,r1,i) ];
+		echo(r0=r0,r1=r1,r=r);
+		if (r[3] || r[4] || r[5])
+			translate([-r[3],-r[4],-r[5]]) rotate([r[0],r[1],r[2]]) translate([r[3],r[4],r[5]]) children();
+		else
+			rotate([r[0],r[1],r[2]]) children();
+	}
 }
 
 
@@ -45,10 +66,10 @@ function mxpoints(partName,mpoints) = [ for (
 		accel = nnv(p[_accel_],100),
 		color = nnv(p[_color_],[]),
 		rotate = nnv(p[_rotate_],[]),
-		previousColor = [],
-		previousRotate = [],
-		prevColor = [],
-		prevRotate = [];
+		previousColor = color,
+		previousRotate = rotate,
+		prevColor = color,
+		prevRotate = rotate;
 	i < len(mpoints);
 		i = i+1,
 		p = mpoints[i],
