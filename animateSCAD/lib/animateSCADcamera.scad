@@ -32,13 +32,14 @@ _leng_ = 13; // length of path
 _startSpeed_ = 14;
 _endSpeed_ = 15;
 _endTime_ = 16; // only for vxpoints
+_nextStop_ = 17; // next (sub)path is not moving
 
-function cpointx(cpoint,pname,pos,move,cameraAndView,standStill,speed,time,accel,cRel,straightAhead,zoom,splineM,startTime,leng,startSpeed,endSpeed,endTime) =
+function cpointx(cpoint,pname,pos,move,cameraAndView,standStill,speed,time,accel,cRel,straightAhead,zoom,splineM,startTime,leng,startSpeed,endSpeed,endTime,nextStop) =
 	[nnv(cpoint[_pname_],pname),nnv(pos,cpoint[_pos_]),nnv(move,cpoint[_move_]),nnv(cameraAndView,cpoint[_cameraAndView_]),nnv(standStill,cpoint[_standStill_]),
 	 nnv(speed,cpoint[_speed_]),nnv(time,cpoint[_time_]),nnv(accel,cpoint[_accel_]),
 	 nnv(cRel,cpoint[_cRel_]),nnv(straightAhead,cpoint[_straightAhead_]),nnv(zoom,cpoint[_zoom_]),
 	 nnv(splineM,cpoint[_splineM_]),nnv(startTime,cpoint[_startTime_]),
-	 nnv(leng,cpoint[_leng_]),nnv(startSpeed,cpoint[_startSpeed_]),nnv(endSpeed,cpoint[_endSpeed_]),nnv(endTime,cpoint[_endTime_])];
+	 nnv(leng,cpoint[_leng_]),nnv(startSpeed,cpoint[_startSpeed_]),nnv(endSpeed,cpoint[_endSpeed_]),nnv(endTime,cpoint[_endTime_]),nnv(nextStop,cpoint[_nextStop_])];
 
 // This is the main function that initiates all the hard work.
 // The caller must set the returned vector to $camera, and should set $vpd, $vpr and $vpt from the first three elements in $camera
@@ -52,7 +53,7 @@ function cpointx(cpoint,pname,pos,move,cameraAndView,standStill,speed,time,accel
 // $camera[7] 	vpr (the real on)
 // $camera[8] 	vpt (the real on)
 function _camera(cpoints,vpoints,fps,t,frameNo) =
-	assert(is_list(cpoints) && len(cpoints) > 1, "The cpoints argument should be a list of cpoint()")
+//	assert(is_list(cpoints) && len(cpoints) > 1, "The cpoints argument should be a list of cpoint()")
 //	assert(cpoints[0][_pos_] != undef || cpoints[0][_viewAtAbsolute_] != undef, "The first cpoint should have an absolute camera position or an absolute viewAt position")
 	let (
 		sfps = nnv(fps,$fps),
@@ -68,7 +69,7 @@ function _camera(cpoints,vpoints,fps,t,frameNo) =
 		drtx = cvz2vpdrtx([cvPos[0],cvPos[1],1])
 	)
 		echo("animateSCAD:",total_time=totTime,frames_per_second=sfps,total_frames=totTime*sfps)
-		echo(frameTime=frameTime,$t=$t,frameNo=nnv(sframeNo,frameNo),camPos=cvPos[0],viewAtPos=cvPos[1],zoom=cvPos[2],deltaTime=cvPos[3],delta=cvPos[4],towards=cvPos[5])
+//		echo(frameTime=frameTime,$t=$t,frameNo=nnv(sframeNo,frameNo),camPos=cvPos[0],viewAtPos=cvPos[1],zoom=cvPos[2],deltaTime=cvPos[3],delta=cvPos[4],towards=cvPos[5])
 		concat((sframeNo != undef ? [100,[0,0,0],[0,0,0],drtx[3]] : drtx),[cxps,cxxps],drtx,[vxps,vxxps]);
 
 function _fullVpoints(vr,cn,o) = (vr[0] == cn && abs(vr[1]-o) < 0.02) ? [] : [cpointx([],cRel=[cn,o])];
@@ -77,7 +78,7 @@ function fullVpoints(vps,cxps) = concat(_fullVpoints(vps[0][_cRel_],cxps[0][_pna
 // Show the children (=the model) for a specific frame that was specified in $camera from the previous camera() function call
 // If $frameNo != undef we asume a fixed camera and move the world - this is usually only for scripted call to openscad
 // else we asume the camera has already been moved and we can just show the model
-module _animation() {
+module _animation() { 
 	assert($camera != undef,"You must set $camera with: $camera = camera(cpoints);");
 	if ($frameNo != undef)
 		vpdrt2transform($camera[6], $camera[7], $camera[8]) multmatrix($camera[3]) children();
@@ -104,7 +105,7 @@ function findPos(xxps,cxxps,frameTime) = let (
 		pos = vStraightAheadPos(frameTime,p[_straightAhead_],cxxps)
 	) /*echo(pname,frameTime=frameTime,deltaTime=deltaTime,straightAhead=straightAhead,pos=pos)*/ [pos,deltaTime,undef,pname] :
 	let (
-		deltaLeng = lt(deltaTime,p[_startSpeed_],p[_speed_],p[_accel_]),
+		deltaLeng = lt(deltaTime,p[_startSpeed_],p[_speed_],p[_accel_],p[_time_],p[_nextStop_]),
 		delta = p[_leng_] < 0.01 || deltaLeng < 0.01 ? 0.01 :  p[_leng_]-deltaLeng < 0.01 ? 1 : deltaLeng / p[_leng_],
 		pos = p[_leng_] < 0.01 ? p[_pos_] : crSplineT(p[_splineM_],delta)
 	) /*echo(pname,frameTime=frameTime,deltaTime=deltaTime,deltaLeng=deltaLeng,delta=delta,pos=pos)*/ [pos,deltaTime,delta,pname];
@@ -165,13 +166,14 @@ function cxxpoints(cxpoints) = let (
 		leng = prevPos == p[_pos_] ? 0 : crLeng(m),
 		prevPos = p[_pos_],
 		startSpeed = endSpeed,
-		stta = i < len(cxpoints) ? stta(startSpeed,leng,p[_accel_],p[_time_],p[_speed_]) : [],
+		nextStop = i + 1 < len(cxpoints) && norm(p[_pos_]-cxpoints[i+1][_pos_]) < 0.1,
+		stta = i < len(cxpoints) ? stta(startSpeed,leng,p[_accel_],p[_time_],p[_speed_],nextStop) : [],
 		endSpeed = stta[0],
 		time = stta[1],
 		fromTime = toTime,
 		toTime = fromTime+time,
 		dummy = (($frameNo == undef || $frameNo < 1) && i > 0 && i < len(cxpoints) ) ? echo(p[_pname_],startTime=fromTime,time=time,leng=leng,cpos=p[_pos_]) 1 : 0
-) if (i > 0) cpointx(p,splineM=m,time=time,startTime=fromTime,leng=leng,startSpeed=startSpeed,speed=stta[0],accel=stta[2]) ];
+) if (i > 0) cpointx(p,splineM=m,time=time,startTime=fromTime,leng=leng,startSpeed=startSpeed,speed=stta[0],accel=stta[2],nextStop=nextStop) ];
 
 function findcxx(pname,cxxs) = let ( i = search([pname],cxxs) ) cxxs[i[0]];
 
@@ -247,10 +249,11 @@ function vxxpoints(vxpoints,cxxpoints) = let (
 		leng = prevPos == p[_pos_] ? 0 : crLeng(m),
 		prevPos = p[_pos_],
 		startSpeed = endSpeed,
-		stta = i >= len(vxpoints) ? [] : leng > 0 ? stta(startSpeed,leng,p[_accel_],p[_time_],undef) : [0,time,0],
+		nextStop = i + 1 < len(vxpoints) && norm(p[_pos_]-vxpoints[i+1][_pos_]) < 0.1,
+		stta = i >= len(vxpoints) ? [] : leng > 0 ? stta(startSpeed,leng,p[_accel_],p[_time_],undef,nextStop) : [0,time,0],
 		endSpeed = p[_straightAhead_] ? 50 : stta[0],
 		dummy = (($frameNo == undef || $frameNo < 1) && i > 0 && i < len(vxpoints) ) ? echo(p[_pname_],startTime=p[_startTime_],time=p[_time_],leng=leng,vpos=p[_pos_]) 1 : 0
-) if (i > 0) cpointx(p,splineM=m,leng=leng,startSpeed=startSpeed,speed=stta[0],accel=stta[2]) ];
+) if (i > 0) cpointx(p,splineM=m,leng=leng,startSpeed=startSpeed,speed=stta[0],accel=stta[2],nextStop=nextStop) ];
 
 function vcrSplineMs(ps,s=0.3) = [ for (i = [0:len(ps)-2])
 	let (

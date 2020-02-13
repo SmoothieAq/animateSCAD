@@ -32,10 +32,10 @@ $camera = camera(cpoints=[
 		vpoint(["p60",0],pos=[100,0,0])
 	]);
 
-$vpd = $camera[0];
-$vpr = $camera[1];
-$vpt = $camera[2];
+//$vpd = $camera[0];
+//$vpr = $camera[1];
+//$vpt = $camera[2];
 
-animation(showPath=2) myModel();
+animation(showPath=0) myModel();
 
 //
