@@ -112,8 +112,8 @@ function stta_s_no_stop(s0,l,a,tt) = let (
 	p3 = 2 * a * s0 * tt,
 	px = p1 + p2 - p3,
 	py = p1 - p2 + p3,
-	s_ = py <= 0 ? 2 * l / tt - s0 : py > px ? sqrt( px ) - a * tt + s0 : -sqrt( py ) + a * tt + s0,
-	a_ = py <= 0 ? abs(s_ - s0) / tt : a
+	s_ = py <= 0 ? 2 * l / tt - s0 : px <= 0 ? 0 : py > px ? sqrt( px ) - a * tt + s0 : -sqrt( py ) + a * tt + s0,
+	a_ = py <= 0 ? abs(s_ - s0) / tt : px <= 0 ? s0 * s0 / l / 2 : a
 ) /*echo("find s, no stop",s0=s0,l=l,tt=tt,p1=p1,p2=p2,p3=p3,px=px,py=py,s=s_,a=a,a_=a_)*/ [s_,tt,a_];
 
 function stta_s_stop(s0,l,a,tt) = let (
@@ -127,7 +127,7 @@ function stta_s_stop(s0,l,a,tt) = let (
 	a_ = pb <= 0 ? (pl >= l ? s0 * s0 / l / 2 : (2 * s_ - s0) / tt ) : a
 ) /*echo("find s, stop",s0=s0,l=l,tt=tt,p1=p1,p2=p2,p3=p3,pa=pa,pb=pb,pl=pl,s=s_,a=a,a_=a_)*/ [s_,tt,a_];
 
-function lt(t,s0,s,a,tt,stop) = s == 0 ? 0 : let (
+function lt(t,s0,s,a,tt,stop) = s0 == 0 && s == 0 ? 0 : let (
 		ta = min(t, abs(s - s0)/a),
 		tb = max(0, t - abs(s - s0)/a),
 		tc = stop ? max(0, t - (tt - s/a)) : 0,
@@ -137,4 +137,4 @@ function lt(t,s0,s,a,tt,stop) = s == 0 ? 0 : let (
 		bb = tb * s,
 		cc = -tc * tc * a / 2,
 		lt = aa + bb + cc
-) /*echo("lt",s0=s0,s1=s,a=a,tt=tt,stop=stop,ta=ta,tb=tb,tc=tc,a1=a1,a2=a2,aa=aa,bb=bb,cc=cc,lt=lt)*/ lt;
+) /*echo("lt",t=t,s0=s0,s1=s,a=a,tt=tt,stop=stop,ta=ta,tb=tb,tc=tc,a1=a1,a2=a2,aa=aa,bb=bb,cc=cc,lt=lt)*/ lt;
