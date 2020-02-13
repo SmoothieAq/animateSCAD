@@ -1,5 +1,6 @@
 
 use <lib/animateSCADcamera.scad>
+use <lib/animateSCADmove.scad>
 use <lib/animateSCADpath.scad>
 
 function cpoint(pname,pos,move,cameraAndView,standStill,speed,time,accel) =
