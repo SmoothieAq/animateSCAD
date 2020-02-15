@@ -1,6 +1,6 @@
 /*
 
-Model(or model), World and View spaces: http://www.codinglabs.net/article_world_view_projection_matrix.aspx
+Model, World and View spaces: http://www.codinglabs.net/article_world_view_projection_matrix.aspx
 Transformation to View space: https://www.3dgep.com/understanding-the-view-matrix/
 
 We use a "Look At Camera" with Eye position, up vector and target point (and zoom); we hold that in a cvz vector, asuming an up vector of [0,0,1]

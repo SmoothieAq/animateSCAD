@@ -57,9 +57,13 @@ where ta is the time the acceleration segment ends and tc is the time of the dec
 
 With some help from wolframalpha.com, we can deduce the following.
 
-If we know tt, then s is:
-
 If we know s, we can find tt:
+	tt = (2 * s * l + s * ta - s0 * ta + s * s) / (2 * a * s) where ta = abs(s - s0)
+if that was negative, then a is not large enough; we then change a to be just large enough
+	a = (s * ta + s0 * ta + s * s) / (2 * l)
+	tt = ta / a + s / a
+
+If we know tt, then s is:
 	let
 		p1 = a * a * tt * tt
 		p2 = 2 * a * l
@@ -97,7 +101,7 @@ where
 function stta(s0,l,a,tt,s,stop) =
 	tt != undef ?
 		(stop ? stta_s_stop(s0,l,a,tt) : stta_s_no_stop(s0,l,a,tt) ) :
-		( stta_tt_no_stop(s0,l,a,s) );
+		(stop ? stta_tt_stop(s0,l,a,s) : stta_tt_no_stop(s0,l,a,s) );
 
 function stta_tt_no_stop(s0,l,a,s) = let (
 	ta = abs(s - s0),
@@ -105,6 +109,13 @@ function stta_tt_no_stop(s0,l,a,s) = let (
 	tt_ = tt_a > 0 ? tt_a : 2 * l / (s0 + s),
 	a_ = tt_a > 0 ? a : abs(s - s0) / tt_
 ) /*echo("find tt, no stop",s0=s0,l=l,s=s,ta=ta,tt_a=tt_a,tt=tt_,a=a,a_=a_)*/ [s,tt_,a_];
+
+function stta_tt_stop(s0,l,a,s) = let (
+	ta = abs(s - s0),
+	tt_a = (2 * a * l + s * ta - s0 * ta + s * s) / (2 * a * s),
+	a_ = tt_a > 0 ? a : (s * ta + s0 * ta + s * s) / (2 * l),
+	tt_ = tt_a > 0 ? tt_a : ta / _a + s / _a
+) /*echo("find tt, stop",s0=s0,l=l,s=s,ta=ta,tt_a=tt_a,tt=tt_,a=a,a_=a_)*/ [s,tt_,a_];
 
 function stta_s_no_stop(s0,l,a,tt) = let (
 	p1 = a * a * tt * tt,
