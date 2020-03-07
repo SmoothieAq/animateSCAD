@@ -14,7 +14,7 @@ module myModel() {
 
 $fps = 5;
 $frameNo = undef;
-$showPath = -1;
+$showPath = 2;
 
 $camera = camera(cpoints=[
 		cpoint("p10",cameraAndView=[1900,[73,0,145],[45,-70,85]],speed=400),
