@@ -2,6 +2,7 @@
 use <lib/camera.scad>
 use <lib/move.scad>
 use <lib/path.scad>
+use <lib/pointx.scad>
 
 function cpoint(pname,pos,move,cameraAndView,standStill,speed,time,accel) =
 	cpointx([],pos=pos,move=move,cameraAndView=cameraAndView,standStill=standStill,speed=speed,time=time,accel=accel,pname=pname);

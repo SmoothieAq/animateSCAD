@@ -4,9 +4,9 @@ use <splines.scad>
 use <path.scad>
 use <speed.scad>
 use <util.scad>
+use <pointx.scad>
 
-include <pointx.scad>
-
+function findcxx(pname,cxxs) = let ( i = search([pname],cxxs) ) cxxs[i[0]];
 
 // Find the the camera pos, viewAt pos and zoom for a given frameTime
 function findCvz(cxxps,vxxps,frameTime) = let (
@@ -18,33 +18,33 @@ function findCvz(cxxps,vxxps,frameTime) = let (
 // Find the the pos for a given frameTime
 function findPos(xxps,cxxps,frameTime) = let (
 	p = findP(xxps,frameTime), // the path where the frame are in
-	pname = p[_pname_],
-	deltaTime = frameTime-p[_startTime_] // time from beginning of the path
-) !p ? p : p[_straightAhead_] ?
+	pname = cp_pname(p),
+	deltaTime = frameTime-cp_startTime(p) // time from beginning of the path
+) !p ? p : cp_straightAhead(p) ?
 	let (
-		straightAhead = p[_straightAhead_],
-		pos = vStraightAheadPos(frameTime,p[_straightAhead_],cxxps)
+		straightAhead = cp_straightAhead(p),
+		pos = vStraightAheadPos(frameTime,straightAhead,cxxps)
 	) /*echo("findPos",pname,frameTime=frameTime,deltaTime=deltaTime,straightAhead=straightAhead,pos=pos)*/ [pos,deltaTime,undef,pname,p] :
 	let (
-		deltaLeng = lt(deltaTime,p[_startSpeed_],p[_speed_],p[_accel_],p[_time_],p[_nextStop_]),
-		delta = p[_leng_] < 0.01 || deltaLeng < 0.01 ? 0.01 :  p[_leng_]-deltaLeng < 0.01 ? 1 : deltaLeng / p[_leng_],
-		pos = p[_leng_] < 0.01 ? p[_pos_] : crSplineT(p[_splineM_],delta)
+		deltaLeng = lt(deltaTime,cp_startTime(p),cp_speed(p),cp_accel(p),cp_time(p),cp_nextStop(p)),
+		delta = cp_leng(p) < 0.01 || deltaLeng < 0.01 ? 0.01 :  cp_leng(p) - deltaLeng < 0.01 ? 1 : deltaLeng / cp_leng(p),
+		pos = cp_leng(p) < 0.01 ? cp_pos(p) : crSplineT(cp_splineM(p),delta)
 	) /*echo("findPos",pname,frameTime=frameTime,deltaTime=deltaTime,deltaLeng=deltaLeng,delta=delta,pos=pos)*/ [pos,deltaTime,delta,pname,p];
 
 
 /// Find the path containing a given frame
 function findP(xxps,frameTime) = let (
-	p = [ for (p = xxps) if ( frameTime >= p[_startTime_] && frameTime <= p[_startTime_]+p[_time_]) p ][0]
-) p ? p : frameTime < xxps[0][_startTime_] ? undef : xxps[len(xxps)-1];
+	p = [ for (p = xxps) if ( frameTime >= cp_startTime(p) && frameTime <= cp_startTime(p) + cp_time(p)) p ][0]
+) p ? p : frameTime < cp_startTime(xxps[0]) ? undef : xxps[len(xxps)-1];
 
 // Total duration of the animation
-function totTime(xxps) = sum( [ for (p = xxps) p[_time_] ] );
+function totTime(xxps) = sum( [ for (p = xxps) cp_time(p) ] );
 
 
 function cmove(curPos,p) =
-	p[_pos_] != undef ? p[_pos_] :
-		p[_move_] != undef ? curPos + p[_move_] :
-			p[_cameraAndView_] != undef ? let ( cv = p[_cameraAndView_] ) vpdrt2cvz(cv[0], cv[1], cv[2])[0] :
+	cp_pos(p) != undef ? cp_pos(p) :
+		cp_move(p) != undef ? curPos + cp_move(p) :
+			cp_cameraAndView(p) != undef ? let ( cv = cp_cameraAndView(p) ) vpdrt2cvz(cv[0], cv[1], cv[2])[0] :
 				curPos;
 
 function vStraightAheadPos(t,dist,cxxpoints) = let (
