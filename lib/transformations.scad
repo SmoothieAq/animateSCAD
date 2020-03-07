@@ -7,7 +7,7 @@ We use a "Look At Camera" with Eye position, up vector and target point (and zoo
 */
 
 
-use <animateSCADutil.scad>
+use <util.scad>
 
 // from [camPos,viewAtPos,zoom] to [vpd,vpr,vpt,compress/expand]
 function cvz2vpdrtx(cvz) = let (

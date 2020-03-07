@@ -1,8 +1,8 @@
 
-use <animateSCADtransformations.scad>
-use <animateSCADsplines.scad>
-use <animateSCADutil.scad>
-include <animateSCADcamera.scad>
+use <transformations.scad>
+use <splines.scad>
+use <util.scad>
+include <camera.scad>
 
 spacing = 30;
 

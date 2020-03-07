@@ -1,5 +1,5 @@
 
-use <animateSCADutil.scad>
+use <util.scad>
 
 // Catmull-Rom Spline after http://www.cs.cmu.edu/~jkh/462_s07/08_curves_splines_part2.pdf
 function crBasis(s=0.5) = [

@@ -1,5 +1,5 @@
 
-use <../animateSCAD/animateSCAD.scad>
+use <../animate.scad>
 
 module myModel() {
 	color("blue") cube([10,14,18],center=true);
@@ -8,6 +8,7 @@ module myModel() {
 
 $fps = 10;
 $frameNo = undef;
+$showPath = 2;
 
 $camera = camera(cpoints=[
 	cpoint("p10",pos=[110,110,210]),
@@ -27,6 +28,6 @@ $vpd = $camera[0];
 $vpr = $camera[1];
 $vpt = $camera[2];
 
-animation(showPath=2) myModel();
+animation() myModel();
 
 //

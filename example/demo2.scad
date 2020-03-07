@@ -1,5 +1,5 @@
 
-use <../animateSCAD/animateSCAD.scad>
+use <../animate.scad>
 
 module myModel() {
 	color("cornflowerblue") difference() {

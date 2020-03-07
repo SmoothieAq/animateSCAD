@@ -1,7 +1,7 @@
 
-use <lib/animateSCADcamera.scad>
-use <lib/animateSCADmove.scad>
-use <lib/animateSCADpath.scad>
+use <lib/camera.scad>
+use <lib/move.scad>
+use <lib/path.scad>
 
 function cpoint(pname,pos,move,cameraAndView,standStill,speed,time,accel) =
 	cpointx([],pos=pos,move=move,cameraAndView=cameraAndView,standStill=standStill,speed=speed,time=time,accel=accel,pname=pname);

@@ -1,11 +1,11 @@
 
-use <animateSCADtransformations.scad>
-use <animateSCADsplines.scad>
-use <animateSCADpath.scad>
-use <animateSCADspeed.scad>
-use <animateSCADutil.scad>
+use <transformations.scad>
+use <splines.scad>
+use <path.scad>
+use <speed.scad>
+use <util.scad>
 
-include <animateSCADpointx.scad>
+include <pointx.scad>
 
 
 // Find the the camera pos, viewAt pos and zoom for a given frameTime

@@ -1,12 +1,12 @@
 
-use <animateSCADtransformations.scad>
-use <animateSCADsplines.scad>
-use <animateSCADpath.scad>
-use <animateSCADspeed.scad>
-use <animateSCADutil.scad>
-use <animateSCADcameraUtil.scad>
+use <transformations.scad>
+use <splines.scad>
+use <path.scad>
+use <speed.scad>
+use <util.scad>
+use <cameraUtil.scad>
 
-include <animateSCADpointx.scad>
+include <pointx.scad>
 
 
 module _move(partName,mpoints) {
