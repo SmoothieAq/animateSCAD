@@ -1,5 +1,5 @@
 
-use <../animate.scad>
+include <animateSCAD/animate.scad>
 
 module myModel() {
 	color("blue") difference() {
@@ -12,9 +12,7 @@ module myModel() {
 				rotate(i) cube([100, 20, 20], center = true);
 }
 
-$fps = 5;
-$frameNo = undef;
-$showPath=0;
+//$showPath=0;
 
 $camera = camera(cpoints=[
 		cpoint("p10",cameraAndView=[1900,[73,0,145],[45,-70,85]],speed=500),

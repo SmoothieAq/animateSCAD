@@ -26,7 +26,7 @@ function findPos(xxps,cxxps,frameTime) = let (
 		pos = vStraightAheadPos(frameTime,straightAhead,cxxps)
 	) /*echo("findPos",pname,frameTime=frameTime,deltaTime=deltaTime,straightAhead=straightAhead,pos=pos)*/ [pos,deltaTime,undef,pname,p] :
 	let (
-		deltaLeng = lt(deltaTime,cp_startTime(p),cp_speed(p),cp_accel(p),cp_time(p),cp_nextStop(p)),
+		deltaLeng = lt(deltaTime,cp_startSpeed(p),cp_speed(p),cp_accel(p),cp_time(p),cp_nextStop(p)),
 		delta = cp_leng(p) < 0.01 || deltaLeng < 0.01 ? 0.01 :  cp_leng(p) - deltaLeng < 0.01 ? 1 : deltaLeng / cp_leng(p),
 		pos = cp_leng(p) < 0.01 ? cp_pos(p) : crSplineT(cp_splineM(p),delta)
 	) /*echo("findPos",pname,frameTime=frameTime,deltaTime=deltaTime,deltaLeng=deltaLeng,delta=delta,pos=pos)*/ [pos,deltaTime,delta,pname,p];

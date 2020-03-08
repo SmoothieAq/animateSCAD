@@ -1,5 +1,5 @@
 
-use <../animate.scad>
+include <animateSCAD/animate.scad>
 
 module part1()
 	difference() {
@@ -24,9 +24,6 @@ module myModel() {
 	]) part2();
 }
 
-$fps = 5;
-$frameNo = undef;
-$showPath = 0;
 
 $camera = camera(cpoints=[
 		cpoint("p10",cameraAndView=[1900,[73,0,145],[45,-70,85]],speed=400),
